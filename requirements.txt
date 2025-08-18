@@ -1,0 +1,6 @@
+biopython==1.83   # Manejo de archivos .pdb y bioestructuras
+MDAnalysis==2.7.0 # Análisis de trayectorias y estructuras moleculares
+numpy==1.26.4     # Operaciones numéricas
+pandas==2.2.2     # Tablas, resúmenes y salidas .csv
+matplotlib==3.9.2 # Visualización básica de estructuras y gráficos
+scipy==1.14.1     # Funciones matemáticas y análisis adicional

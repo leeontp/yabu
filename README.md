@@ -33,8 +33,8 @@ With Y.A.B.U. you can easily **analyze, edit, and convert** files such as `.pdb`
 ## 🚀 Installation
 Clone the repository:
 ```bash
-git clone https://github.com/your-username/YABU.git
-cd YABU
+git clone https://github.com/leeontp/yabu.git
+cd yabu
 ```
 
 (Optional) Create a virtual environment:
@@ -54,7 +54,7 @@ pip install -r requirements.txt
 ## ⚡ Usage
 Run Y.A.B.U. with:
 ```bash
-python yabu.py
+$./yabu
 ```
 
 Example workflow:
