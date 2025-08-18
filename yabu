@@ -1,21 +1,4 @@
 #!/bin/bash
-
-# Fox ASCII Banner (bigger)
-fox_banner='
-               /\_/\   
-              ( o.o )    Y A B U   L A U N C H E R
-              > ^ < 
-   -----------------------------------------------
-     Your All-purpose Bio-structural Utility 🧪
-   -----------------------------------------------
-'
-
-fox_confused='
-               /\_/\   
-              ( o.o )?   YABU is confused...
-              > ^ <  
-'
-
 echo "$fox_banner"
 
 # Check for python3 or python
