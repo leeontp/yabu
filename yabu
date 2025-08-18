@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Fox ASCII Banner (bigger)
+fox_banner='
+               /\_/\   
+              ( o.o )    Y A B U   L A U N C H E R
+              > ^ < 
+   -----------------------------------------------
+     Your All-purpose Bio-structural Utility 🧪
+   -----------------------------------------------
+'
+
+fox_confused='
+               /\_/\   
+              ( o.o )?   YABU is confused...
+              > ^ <  
+'
+
+echo "$fox_banner"
+
+# Check for python3 or python
+if command -v python3 &>/dev/null; then
+    PYTHON_CMD=python3
+elif command -v python &>/dev/null; then
+    PYTHON_CMD=python
+else
+    echo "$fox_confused"
+    echo "ERROR: Python is not installed on this system."
+    exit 1
+fi
+
+# Run the launcher
+$PYTHON_CMD src/int/yabu_launcher.py
