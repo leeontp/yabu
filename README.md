@@ -1,10 +1,12 @@
 # Y.A.B.U. 🦊🍪
 
 **Your All-purpose Bio-structural Utility**
+
+```ascii
                /\_/\      
               ( o.o )      
-              ( >🍪 )      
-        Y.A.B.U. is eating...
+              ( >🍪 )     YABU is eating...
+```
 
    Y - Your  
    A - All-purpose  
