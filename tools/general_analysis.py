@@ -2,8 +2,8 @@
 """
 system_summary_interactive.py
 
-Script interactivo que genera un resumen del sistema molecular
-y lo guarda en un archivo CSV.
+Interactive script that generates a molecular system summary
+and saves it to a CSV file.
 """
 
 import csv
@@ -11,25 +11,28 @@ from collections import Counter
 import MDAnalysis as mda
 
 def main():
-    print("=== Resumen de sistema molecular ===")
+    print("=== Molecular System Summary ===")
 
-    # Pedir archivos al usuario
-    top = input("Ingrese el archivo de topología (.tpr, .gro, .pdb, etc.): ").strip()
-    traj = input("Ingrese el archivo de trayectoria (opcional, presione Enter si no aplica): ").strip()
-    out = input("Ingrese el nombre del archivo de salida (.csv) [system_summary.csv]: ").strip()
-    if out == "":
-        out = "system_summary.csv"
+    # Ask for input files
+    top = input("Enter topology file (.tpr, .gro, .pdb, etc.): ").strip()
+    traj = input("Enter trajectory file (optional, press Enter if not applicable): ").strip()
+    
+    # Output file name
+    output_name = input("Enter output file name (without extension) [system_summary]: ").strip()
+    if output_name == "":
+        output_name = "system_summary"
+    out_csv = f"{output_name}.csv"
 
-    # Cargar universo
+    # Load universe
     if traj:
         u = mda.Universe(top, traj)
     else:
         u = mda.Universe(top)
 
-    # Contar residuos
+    # Count residues
     res_counts = Counter([res.resname for res in u.residues])
 
-    # Preparar tabla
+    # Prepare table
     rows = []
     for res in sorted(res_counts):
         res_obj = u.select_atoms(f"resname {res}")
@@ -37,7 +40,7 @@ def main():
         n_residues = res_counts[res]
         rows.append({"Resname": res, "Residues": n_residues, "Atoms": n_atoms})
 
-    # Calcular características globales
+    # Calculate global characteristics
     total_atoms = len(u.atoms)
     total_residues = len(u.residues)
     total_segments = len(u.segments)
@@ -45,16 +48,16 @@ def main():
     coords_min = u.atoms.positions.min(axis=0)
     coords_max = u.atoms.positions.max(axis=0)
 
-    # Escribir CSV
-    with open(out, "w", newline="") as f:
+    # Write CSV
+    with open(out_csv, "w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["=== Tabla de residuos ==="])
+        writer.writerow(["=== Residue Table ==="])
         writer.writerow(["Resname", "Residues", "Atoms"])
         for row in rows:
             writer.writerow([row["Resname"], row["Residues"], row["Atoms"]])
 
         writer.writerow([])
-        writer.writerow(["=== Características generales ==="])
+        writer.writerow(["=== Global System Properties ==="])
         writer.writerow(["Total atoms", total_atoms])
         writer.writerow(["Total residues", total_residues])
         writer.writerow(["Total segments", total_segments])
@@ -62,8 +65,8 @@ def main():
         writer.writerow(["Bounding box min [Å]"] + list(coords_min))
         writer.writerow(["Bounding box max [Å]"] + list(coords_max))
 
-    print(f"\n✅ Resumen guardado en {out}")
+    print(f"\n✅ Summary saved to {out_csv}")
 
 if __name__ == "__main__":
     main()
-
+    
