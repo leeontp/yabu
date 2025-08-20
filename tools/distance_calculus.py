@@ -4,7 +4,7 @@ import pandas as pd
 
 def calculate_distances(gro_file, traj_file=None, ref_atoms=None, dist_atoms=None, output_csv="distances.csv"):
     """
-    Calculate distances between two groups of atoms and save the results in a .csv file
+    Calculate distances between two groups of atoms and save the results in a tidy .csv file
     
     Parameters:
     - gro_file: topology file (.gro)
@@ -27,24 +27,22 @@ def calculate_distances(gro_file, traj_file=None, ref_atoms=None, dist_atoms=Non
     if len(ref_group) == 0 or len(dist_group) == 0:
         raise ValueError("One of the atom selections is empty. Please check your inputs.")
 
-    # Prepare dataframe
-    columns = []
-    for ref in ref_group:
-        for dist in dist_group:
-            columns.append(f"{ref.resname}{ref.resid}_{ref.name}-to-{dist.resname}{dist.resid}_{dist.name}")
-    distances_df = pd.DataFrame(columns=columns)
+    # Prepare list for results
+    records = []
 
     # Calculate distances for each frame
     for ts in u.trajectory:
-        row = []
         for ref in ref_group:
             for dist in dist_group:
-                d = np.linalg.norm(ref.position - dist.position)
-                row.append(d)
-        distances_df.loc[ts.frame] = row
+                d = np.linalg.norm(ref.position - dist.position)  # distance in Å
+                atom_pair = f"{ref.id}-{ref.name} ↔ {dist.id}-{dist.name}"
+                records.append([ts.frame, atom_pair, d])
+
+    # Create dataframe
+    distances_df = pd.DataFrame(records, columns=["Frame", "Atom Pair", "Distance (Å)"])
 
     # Save to .csv
-    distances_df.to_csv(output_csv, index_label="Frame")
+    distances_df.to_csv(output_csv, index=False)
     print(f"\nDistance file saved as {output_csv}")
 
 

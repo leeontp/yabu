@@ -51,7 +51,7 @@ pip install -r requirements.txt
 
 ---
 
-## ⚡ Usage
+## ⚡ Usage (Not Avalaible)
 Run Y.A.B.U. with:
 ```bash
 $./yabu
@@ -59,7 +59,7 @@ $./yabu
 
 Example workflow:
 1. Input a `.pdb` or `.gro` file.  
-2. Choose what you want to do (inspect, edit, convert, summarize).  
+2. Choose what you want to do (inspect, edit, convert, summarize). 
 3. Get outputs in `.csv`, `.pdb`, or `.gro` formats.  
 
 ---
