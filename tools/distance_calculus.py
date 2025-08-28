@@ -34,12 +34,13 @@ def calculate_distances(gro_file, traj_file=None, ref_atoms=None, dist_atoms=Non
     for ts in u.trajectory:
         for ref in ref_group:
             for dist in dist_group:
-                d = np.linalg.norm(ref.position - dist.position)  # distance in Å
+                d_ang = np.linalg.norm(ref.position - dist.position)  # in Å
+                d_nm = d_ang / 10.0  # convert to nm
                 atom_pair = f"{ref.id}-{ref.name} ↔ {dist.id}-{dist.name}"
-                records.append([ts.frame, atom_pair, d])
+                records.append([ts.frame, atom_pair, d_ang, d_nm])
 
     # Create dataframe
-    distances_df = pd.DataFrame(records, columns=["Frame", "Atom Pair", "Distance (Å)"])
+    distances_df = pd.DataFrame(records, columns=["Frame", "Atom Pair", "Distance (Å)", "Distance (nm)"])
 
     # Save to .csv
     distances_df.to_csv(output_csv, index=False)

@@ -90,19 +90,44 @@ df_all.to_csv(csv_filename, index=False)
 print(f"CSV con todos los perfiles guardado: {csv_filename}")
 
 # ------------------------------
-# Graficar todos los perfiles juntos
-plt.figure(figsize=(8,5))
-for name, profile in all_profiles.items():
-    plt.plot(bin_centers, profile, label=name)
+# Graficar todos los perfiles juntos con doble eje
+fig, ax1 = plt.subplots(figsize=(8,5))
 
-plt.xlabel('z (Å)')
-plt.ylabel('Electron Density (e/Å³)')
-plt.title('Electron Density Profiles por Residuo y Sistema Total')
-plt.legend()
+# Eje izquierdo -> perfil del sistema completo
+ax1.plot(bin_centers, all_profiles['ALL'], color='black', linewidth=2, label='ALL')
+ax1.set_xlabel('z (Å)')
+ax1.set_ylabel('Electron Density (System) [e/Å³]', color='black')
+ax1.tick_params(axis='y', labelcolor='black')
+
+# Ajustar límites del eje izquierdo
+ax1.set_ylim(min(all_profiles['ALL'])*0.95, max(all_profiles['ALL'])*1.05)
+
+# Eje derecho -> perfiles de los residuos
+ax2 = ax1.twinx()
+for name, profile in all_profiles.items():
+    if name == 'ALL':
+        continue
+    ax2.plot(bin_centers, profile, label=name, linestyle='--')
+
+ax2.set_ylabel('Electron Density (Residues) [e/Å³]', color='blue')
+ax2.tick_params(axis='y', labelcolor='blue')
+
+# Ajustar límites del eje derecho
+residue_profiles = [profile for name, profile in all_profiles.items() if name != 'ALL']
+if residue_profiles:  # evitar error si no hay residuos
+    all_res_vals = np.concatenate(residue_profiles)
+    ax2.set_ylim(all_res_vals.min()*0.95, all_res_vals.max()*1.05)
+
+# Combinar leyendas
+lines1, labels1 = ax1.get_legend_handles_labels()
+lines2, labels2 = ax2.get_legend_handles_labels()
+ax1.legend(lines1 + lines2, labels1 + labels2, loc='best')
+
+plt.title('Electron Density Profiles (System vs Residues)')
 plt.tight_layout()
 png_filename = f"{output_name}_all_residues.png"
 plt.savefig(png_filename, dpi=300)
-plt.close()  # cerramos la figura para evitar warning en entornos sin GUI
+plt.close()
 
 print(f"Gráfico con todos los perfiles guardado: {png_filename}")
 print("Cálculo finalizado para todos los residuos y el sistema total.")
