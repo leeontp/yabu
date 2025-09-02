@@ -4,23 +4,23 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 # ------------------------------
-# Input del usuario
+# User input
 # ------------------------------
-gro_file = input("Ingrese el archivo .gro: ")
-traj_file = input("Ingrese el archivo de trayectoria (.xtc/.trr): ")
-residues_input = input("Ingrese los nombres de los residuos separados por coma (ej: POPC,DPPC): ")
-output_name = input("Ingrese el nombre base para archivos de salida (sin extensión): ")
-n_bins = int(input("Ingrese el número de bins a lo largo de z (ej: 100): "))
+gro_file = input("Enter the .gro file: ")
+traj_file = input("Enter the trajectory file (.xtc/.trr): ")
+residues_input = input("Enter the residue names separated by commas (e.g., POPC,DPPC): ")
+output_name = input("Enter the base name for output files (without extension): ")
+n_bins = int(input("Enter the number of bins along z (e.g., 100): "))
 
 residues = [r.strip() for r in residues_input.split(",")]
 
 # ------------------------------
-# Cargar la simulación
+# Load the simulation
 # ------------------------------
 u = mda.Universe(gro_file, traj_file)
 
 # ------------------------------
-# Definir números de electrones por tipo de átomo
+# Define number of electrons per atom type
 electron_dict = {
     'H': 1,
     'C': 6,
@@ -31,18 +31,18 @@ electron_dict = {
 }
 
 # ------------------------------
-# Preparar bins
+# Prepare bins
 z_min = 0.0
-z_max = u.dimensions[2]  # límite en z
+z_max = u.dimensions[2]  # z limit
 bin_edges = np.linspace(z_min, z_max, n_bins+1)
 bin_centers = 0.5*(bin_edges[:-1] + bin_edges[1:])
 
 # ------------------------------
-# Diccionario para almacenar todos los perfiles
+# Dictionary to store all profiles
 all_profiles = {}
 
 # ------------------------------
-# Función para calcular densidad electrónica de un grupo de átomos
+# Function to calculate electron density of an atom group
 def calculate_density(atomgroup):
     density_sum = np.zeros(n_bins)
     n_frames = 0
@@ -63,46 +63,46 @@ def calculate_density(atomgroup):
     return density_avg
 
 # ------------------------------
-# Calcular densidad para cada residuo
+# Calculate density for each residue
 for resname in residues:
-    print(f"Procesando residuo: {resname}")
+    print(f"Processing residue: {resname}")
     selection = u.select_atoms(f"resname {resname}")
     if len(selection) == 0:
-        print(f"Advertencia: No se encontraron átomos para el residuo {resname}. Se omite.")
+        print(f"Warning: No atoms found for residue {resname}. Skipping.")
         continue
     density_avg = calculate_density(selection)
     all_profiles[resname] = density_avg
 
 # ------------------------------
-# Calcular densidad para todo el sistema
-print("Procesando densidad de todo el sistema")
+# Calculate density for the whole system
+print("Processing density for the whole system")
 all_density = calculate_density(u.atoms)
 all_profiles['ALL'] = all_density
 
 # ------------------------------
-# Crear DataFrame y guardar CSV
+# Create DataFrame and save CSV
 df_all = pd.DataFrame({'z (Å)': bin_centers})
 for name, profile in all_profiles.items():
     df_all[name] = profile
 
 csv_filename = f"{output_name}_all_residues.csv"
 df_all.to_csv(csv_filename, index=False)
-print(f"CSV con todos los perfiles guardado: {csv_filename}")
+print(f"CSV with all profiles saved: {csv_filename}")
 
 # ------------------------------
-# Graficar todos los perfiles juntos con doble eje
+# Plot all profiles together with double y-axis
 fig, ax1 = plt.subplots(figsize=(8,5))
 
-# Eje izquierdo -> perfil del sistema completo
+# Left axis -> full system profile
 ax1.plot(bin_centers, all_profiles['ALL'], color='black', linewidth=2, label='ALL')
 ax1.set_xlabel('z (Å)')
 ax1.set_ylabel('Electron Density (System) [e/Å³]', color='black')
 ax1.tick_params(axis='y', labelcolor='black')
 
-# Ajustar límites del eje izquierdo
+# Adjust limits of left axis
 ax1.set_ylim(min(all_profiles['ALL'])*0.95, max(all_profiles['ALL'])*1.05)
 
-# Eje derecho -> perfiles de los residuos
+# Right axis -> residue profiles
 ax2 = ax1.twinx()
 for name, profile in all_profiles.items():
     if name == 'ALL':
@@ -112,13 +112,13 @@ for name, profile in all_profiles.items():
 ax2.set_ylabel('Electron Density (Residues) [e/Å³]', color='blue')
 ax2.tick_params(axis='y', labelcolor='blue')
 
-# Ajustar límites del eje derecho
+# Adjust limits of right axis
 residue_profiles = [profile for name, profile in all_profiles.items() if name != 'ALL']
-if residue_profiles:  # evitar error si no hay residuos
+if residue_profiles:  # avoid error if no residues
     all_res_vals = np.concatenate(residue_profiles)
     ax2.set_ylim(all_res_vals.min()*0.95, all_res_vals.max()*1.05)
 
-# Combinar leyendas
+# Combine legends
 lines1, labels1 = ax1.get_legend_handles_labels()
 lines2, labels2 = ax2.get_legend_handles_labels()
 ax1.legend(lines1 + lines2, labels1 + labels2, loc='best')
@@ -129,5 +129,5 @@ png_filename = f"{output_name}_all_residues.png"
 plt.savefig(png_filename, dpi=300)
 plt.close()
 
-print(f"Gráfico con todos los perfiles guardado: {png_filename}")
-print("Cálculo finalizado para todos los residuos y el sistema total.")
+print(f"Plot with all profiles saved: {png_filename}")
+print("Final calculation completed for all residues and the total system.")
