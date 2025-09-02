@@ -22,11 +22,17 @@ all_results = []
 # Interactive Selection
 # ------------------------------
 while True:
-    resid_input = input("Enter the residue ID you want to analyze: ")
-    resid = int(resid_input)
-    res = u.residues[resid]
+    resname = input("Enter the RESNAME you want to analyze (e.g., POPC): ").strip()
+    res_group = u.select_atoms(f"resname {resname}")
 
-    print(f"\nAtoms in residue {res.resname}-{resid}:")
+    if len(res_group.residues) == 0:
+        print(f"No residues with resname {resname} found, try again.")
+        continue
+
+    # Take the first residue as representative
+    res = res_group.residues[0]
+
+    print(f"\nAtoms in residue {resname}:")
     for atom in res.atoms:
         print(f"{atom.name} ({atom.element})")
 
@@ -39,7 +45,7 @@ while True:
         pairs.append((C_name, H_name))
 
     if not pairs:
-        print("No pairs selected, skipping this residue.")
+        print("No pairs selected, skipping this resname.")
     else:
         # ------------------------------
         # Calculate S_CD
@@ -47,32 +53,33 @@ while True:
         residue_results = {C: [] for C, H in pairs}
 
         for ts in u.trajectory:
-            for C_name, H_name in pairs:
-                try:
-                    C_atom = res.atoms.select_atoms(f"name {C_name}")[0]
-                    H_atom = res.atoms.select_atoms(f"name {H_name}")[0]
+            for res in res_group.residues:
+                for C_name, H_name in pairs:
+                    try:
+                        C_atom = res.atoms.select_atoms(f"name {C_name}")[0]
+                        H_atom = res.atoms.select_atoms(f"name {H_name}")[0]
 
-                    CH_vector = H_atom.position - C_atom.position
-                    CH_vector /= np.linalg.norm(CH_vector)
+                        CH_vector = H_atom.position - C_atom.position
+                        CH_vector /= np.linalg.norm(CH_vector)
 
-                    cos_theta = np.dot(CH_vector, membrane_normal)
-                    cos2 = cos_theta**2
+                        cos_theta = np.dot(CH_vector, membrane_normal)
+                        cos2 = cos_theta**2
 
-                    S_cd = 0.5 * (3 * cos2 - 1)
-                    residue_results[C_name].append(S_cd)
-                except IndexError:
-                    print(f"Warning: atom {C_name} or {H_name} not found in residue {res.resname}-{resid}")
+                        S_cd = 0.5 * (3 * cos2 - 1)
+                        residue_results[C_name].append(S_cd)
+                    except IndexError:
+                        pass  # skip missing atoms
 
         # Average results
         for C_name in residue_results:
             avg_Scd = np.mean(residue_results[C_name])
             all_results.append({
-                "Residue": f"{res.resname}-{resid}",
+                "Resname": resname,
                 "Carbon": C_name,
                 "S_CD": avg_Scd
             })
 
-    more = input("Do you want to analyze another residue? (y/n): ")
+    more = input("Do you want to analyze another RESNAME? (y/n): ")
     if more.lower() != "y":
         break
 
@@ -89,12 +96,14 @@ print("\nResults saved to deuterium_order_parameters.csv")
 markers = itertools.cycle(["o", "s", "^", "D", "v", "x", "*", "p", "h"])
 plt.figure(figsize=(8,6))
 
-for resid, group in df.groupby("Residue"):
+for resname, group in df.groupby("Resname"):
     x = np.arange(1, len(group)+1)
     y = group["S_CD"].values
-    plt.plot(x, y, marker=next(markers), label=resid, linestyle='-', linewidth=1.2)
+    labels = group["Carbon"].values
+    plt.plot(x, y, marker=next(markers), label=resname, linestyle='-', linewidth=1.2)
 
-plt.xlabel("Carbon index")
+plt.xticks(x, labels)
+plt.xlabel("Carbon atom")
 plt.ylabel("S_CD")
 plt.title("Deuterium Order Parameters")
 plt.legend()
