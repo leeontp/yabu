@@ -29,8 +29,7 @@ for ts in u.trajectory:
     # Get box lengths
     Lx, Ly, Lz, _, _, _ = ts.dimensions
     
-    # Lipids per area (lipids / Å²)
-    value = n_residues / (Lx * Ly)
+    value = (Lx * Ly) / n_residues
     
     times.append(ts.time / 1000.0)  # ps → ns
     lipid_per_area.append(value)
