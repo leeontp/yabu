@@ -3,10 +3,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # --- Constants ---
-k_B = 1.380649e-23  # Boltzmann constant in J/K
+k_B = 1.380649e-23  # Boltzmann constant (J/K)
 
 # --- User Inputs ---
-print("\n=== Membrane Compressibility Analysis ===")
+print("\n=== Membrane Area per Lipid & Compressibility Analysis ===")
 gro_file = input("Enter structure file name (.gro or .pdb): ").strip()
 xtc_file = input("Enter trajectory file name (.xtc or .trr): ").strip()
 lipid_resnames = input("Enter lipid resnames (space-separated, e.g., POPC POPE CHOL): ").strip().split()
@@ -18,70 +18,65 @@ output_name = input("Enter base name for output files (CSV and PNG): ").strip()
 # Convert starting time to ps
 t_start_ps = t_start_ns * 1000
 
-# --- Load Trajectory ---
+# --- Load trajectory ---
 u = mda.Universe(gro_file, xtc_file)
 
-# --- Select all atoms of the lipid residues ---
-lipid_atoms = u.select_atoms(f"resname {' '.join(lipid_resnames)}")
-z_center = lipid_atoms.positions[:, 2].mean()
-
 # --- Initialize arrays ---
-times = []      # Time in ns
-areas = []      # Area per lipid (proxy) in Å²/residue
+times = []     # time in ns
+areas = []     # area per lipid in Å²
 
-# --- Process Trajectory ---
+# --- Process trajectory ---
 for ts in u.trajectory:
     if ts.time < t_start_ps:
         continue
     
-    upper_leaflet = lipid_atoms.positions[:, 2] > z_center
-    lower_leaflet = lipid_atoms.positions[:, 2] < z_center
+    # Get box lengths
+    Lx, Ly, Lz, _, _, _ = ts.dimensions
     
-    if not upper_leaflet.any() or not lower_leaflet.any():
-        continue
+    # Area per lipid (Å² / lipid)
+    area = (Lx * Ly) / n_residues
     
-    upper_z = lipid_atoms.positions[upper_leaflet, 2].mean()
-    lower_z = lipid_atoms.positions[lower_leaflet, 2].mean()
-    
-    width = upper_z - lower_z
-    area = (width ** 2) / n_residues
-    times.append(ts.time / 1000)  # ps -> ns
+    times.append(ts.time / 1000.0)  # convert ps → ns
     areas.append(area)
 
 # Convert to numpy arrays
 areas = np.array(areas)
 times = np.array(times)
 
-# --- Calculate compressibility modulus K_A per frame ---
-areas_m2 = areas * 1e-20
-K_A_frames = k_B * T_kelvin * areas_m2 / np.var(areas_m2, ddof=1)
+# --- Convert to SI units ---
+areas_m2 = areas * 1e-20   # Å² → m²
 
-# --- Calculate mean and std ---
-K_A_mean = np.mean(K_A_frames)
-K_A_std = np.std(K_A_frames, ddof=1)
+# --- Calculate statistics ---
+A_mean = np.mean(areas_m2)
+A_var  = np.var(areas_m2, ddof=1)
 
-# --- Save to CSV ---
+# Compressibility modulus in N/m
+K_A = (k_B * T_kelvin * A_mean) / A_var
+
+# --- Save results to CSV ---
 csv_file = f"{output_name}.csv"
 with open(csv_file, "w") as f:
-    f.write("Time (ns),K_A (J/m²)\n")
-    for t, k in zip(times, K_A_frames):
-        f.write(f"{t:.4f},{k:.4e}\n")
-    f.write(f"Mean ± Std,{K_A_mean:.4e} ± {K_A_std:.4e}\n")
+    f.write("Time (ns),Area per lipid (Å^2)\n")
+    for t, a in zip(times, areas):
+        f.write(f"{t:.4f},{a:.4f}\n")
+    f.write(f"\nMean area per lipid (Å^2),{np.mean(areas):.4f}\n")
+    f.write(f"Variance (Å^4),{np.var(areas, ddof=1):.4f}\n")
+    f.write(f"Compressibility modulus K_A (N/m),{K_A:.4e}\n")
 
-# --- Plot ---
+# --- Plot area per lipid ---
 png_file = f"{output_name}.png"
 plt.figure(figsize=(8,5))
-plt.plot(times, K_A_frames, color="teal", label="K_A per frame")
-plt.axhline(K_A_mean, color="red", linestyle="--", label="Mean K_A")
+plt.plot(times, areas, color="teal", label="Area per lipid")
+plt.axhline(np.mean(areas), color="red", linestyle="--", label="Mean")
 plt.xlabel("Time (ns)")
-plt.ylabel("Compressibility Modulus K_A (J/m²)")
-plt.title("Membrane Compressibility Modulus")
+plt.ylabel("Area per lipid (Å²)")
+plt.title("Membrane Area per Lipid")
 plt.legend()
 plt.grid(True, alpha=0.3)
 plt.tight_layout()
 plt.savefig(png_file, dpi=300)
 
-# --- Print Results ---
+# --- Print results ---
 print(f"\nData saved to '{csv_file}' and plot saved to '{png_file}'!")
-print(f"Average compressibility modulus K_A: {K_A_mean:.4e} J/m²")
-print(f"Standard deviation: {K_A_std:.4e} J/m²")
+print(f"Mean area per lipid: {np.mean(areas):.2f} Å²")
+print(f"Compressibility modulus K_A: {K_A:.4e} N/m")
